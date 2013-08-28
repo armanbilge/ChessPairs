@@ -1,5 +1,5 @@
 language: java
-install:
+install: build
 jdk:
   - oraclejdk7
   - openjdk7
