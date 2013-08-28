@@ -10,3 +10,4 @@ Pairings are optimized based on a set of criteria, with the following priority:
 
 [**DOWNLOAD**](http://github.com/armanbilge/ChessPairs/releases)
 
+[![Build Status](https://travis-ci.org/armanbilge/ChessPairs.png?branch=master)](https://travis-ci.org/armanbilge/ChessPairs)
