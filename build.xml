@@ -23,7 +23,7 @@
         <delete dir="${build}"/>
     </target>
 
-    <target name="build" depends="clean,compile-all,dist-all,optimize"
+    <target name="build" depends="clean,compile-all,dist-all"
             description="Clean and Build all and distribute jar">
     </target>
 
@@ -46,7 +46,7 @@
         <!-- Create the distribution directory -->
         <mkdir dir="${dist}"/>
 
-        <jar jarfile="${dist}/chesspairs-temp.jar">
+        <jar jarfile="${dist}/chesspairs.jar">
             <manifest>
                 <attribute name="Built-By" value="${user.name}"/>
                 <attribute name="Main-Class" value="${main_class}"/>
