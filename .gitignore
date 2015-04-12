@@ -1,7 +1,3 @@
-.classpath
-.project
-.settings/
-.eclipse/
-bin/
+.iml
+.idea/
 build/
-*.log

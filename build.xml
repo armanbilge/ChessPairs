@@ -60,16 +60,4 @@
         </jar>
     </target>
 
-   <taskdef name="JarOpt" 
-	classname="org.cmc.jaroptimizer.JarOptTask" 
-	classpath="${lib}/jaropt.jar" />
-
-    <target name="optimize" depends="dist-all">
-        <JarOpt src="${dist}/chesspairs-temp.jar" dst="${dist}/chesspairs.jar" 
-	        stripNonClassFiles="false" >
-            <includePattern>estabrook.chessclub.chesspairs.ChessPairs</includePattern>
-        </JarOpt>
-        <delete file="${dist}/chesspairs-temp.jar"/>
-    </target>
-
 </project>
