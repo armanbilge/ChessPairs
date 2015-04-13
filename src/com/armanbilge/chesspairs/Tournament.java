@@ -1,5 +1,8 @@
 package com.armanbilge.chesspairs;
 
+import com.sun.javafx.collections.ObservableListWrapper;
+import javafx.collections.ObservableList;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -8,25 +11,23 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author Arman Bilge
  */
 public class Tournament implements Serializable {
 
-    private final Set<Player> players;
-    private final List<Game> games;
+    private final ObservableList<Player> players;
+    private final ObservableList<Game> games;
 
     public Tournament() {
-        this.players = new HashSet<>();
-        this.games = new ArrayList<>();
+        this.players = new ObservableListWrapper<>(new ArrayList<>());
+        this.games = new ObservableListWrapper<>(new ArrayList<>());
     }
 
     public void addPlayer(final Player player) {
         players.add(player);
+        players.sort((p, o) -> p.getName().compareTo(o.getName()));
     }
 
     public void removePlayer(final Player player) {
@@ -55,6 +56,14 @@ public class Tournament implements Serializable {
         try (final ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
             return (Tournament) in.readObject();
         }
+    }
+
+    public ObservableList<Player> getPlayers() {
+        return players;
+    }
+
+    public ObservableList<Game> getGames() {
+        return games;
     }
 
 }

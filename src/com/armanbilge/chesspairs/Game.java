@@ -49,6 +49,31 @@ public class Game implements Serializable {
             return 0;
     }
 
+    public String getOutcome(final Player player) {
+        final String won = "won";
+        final String lost = "lost";
+        switch (outcome) {
+            case WHITE_WON: {
+                switch (getColor(player)) {
+                    case WHITE:
+                        return won;
+                    case BLACK:
+                        return lost;
+                }
+            }
+            case BLACK_WON: {
+                switch (getColor(player)) {
+                    case WHITE:
+                        return lost;
+                    case BLACK:
+                        return won;
+                }
+            }
+            case DRAW: return "draw";
+        }
+        return null;
+    }
+
     public boolean counted(final Player player) {
         switch (getColor(player)) {
             case WHITE:

@@ -1,5 +1,8 @@
 package com.armanbilge.chesspairs;
 
+import com.sun.javafx.collections.ObservableListWrapper;
+import javafx.collections.ObservableList;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,15 +14,12 @@ import java.util.stream.Collectors;
  */
 public class Player implements Serializable {
 
-    private final String first;
-    private final String last;
-    private final List<Game> games;
+    private final String name;
+    private final ObservableList<Game> games;
 
-    public Player(final String first,
-                  final String last) {
-        this.first = first;
-        this.last = last;
-        games = new ArrayList<>();
+    public Player(final String name) {
+        this.name = name;
+        games = new ObservableListWrapper<>(new ArrayList<>());
     }
 
     void addGame(final Game game) {
@@ -28,6 +28,18 @@ public class Player implements Serializable {
 
     void removeGame(final Game game) {
         games.remove(game);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String toString() {
+        return getName();
+    }
+
+    public ObservableList<Game> getGames() {
+        return games;
     }
 
     public double getScore() {

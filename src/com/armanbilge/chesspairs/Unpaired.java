@@ -6,7 +6,7 @@ package com.armanbilge.chesspairs;
 public final class Unpaired extends Player {
 
     public Unpaired() {
-        super("", "UNPAIRED");
+        super("UNPAIRED");
     }
 
     @Override
