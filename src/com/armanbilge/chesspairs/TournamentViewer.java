@@ -1,37 +1,64 @@
 package com.armanbilge.chesspairs;
 
 import javafx.beans.value.ObservableValueBase;
+import javafx.event.EventType;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author Arman Bilge
  */
 public class TournamentViewer extends BorderPane {
 
-    private Tournament tournament = new Tournament();
     private final TableView<Player> players;
     private final TableView<Game> games;
+    private final FileChooser chooser;
+
+    private Tournament tournament = new Tournament();
+    private File tournamentFile = null;
 
     {
         players = new TableView<>(tournament.getPlayers());
         games = new TableView<>();
 
+        chooser = new FileChooser();
+        chooser.setSelectedExtensionFilter(new ExtensionFilter("Chess Tournament", "cht"));
+
         final MenuBar menuBar = new MenuBar();
-        menuBar.setUseSystemMenuBar(true);
+        setTop(menuBar);
+        menuBar.setUseSystemMenuBar(false);
 
         final Menu fileMenu = new Menu("File");
         menuBar.getMenus().addAll(fileMenu);
 
-        setTop(menuBar);
+        final MenuItem open = new MenuItem("Open...");
+        open.setOnAction(event -> open());
+        final MenuItem save = new MenuItem("Save...");
+        save.setOnAction(event -> save(false));
+        final MenuItem saveAs = new MenuItem("Save As...");
+        saveAs.setOnAction(event -> save(true));
+        fileMenu.getItems().addAll(open, save, saveAs);
+
+        final Menu tournamentMenu = new Menu("Tournament");
+        menuBar.getMenus().addAll(tournamentMenu);
+
+        menuBar.setVisible(true);
 
         final Button addButton = new Button("+");
         addButton.setOnAction(ae -> {
@@ -43,6 +70,9 @@ public class TournamentViewer extends BorderPane {
         });
 
         final Button removeButton = new Button("-");
+        removeButton.setDisable(players.getFocusModel().getFocusedCell().getRow() == -1);
+        players.addEventHandler(EventType.ROOT,
+                event -> removeButton.setDisable(players.getFocusModel().getFocusedCell().getRow() == -1));
         removeButton.setOnAction(ae -> tournament.removePlayer(players.getFocusModel().getFocusedItem()));
 
         final TableColumn<Player,String> nameColumn = new TableColumn<>("Name");
@@ -107,9 +137,40 @@ public class TournamentViewer extends BorderPane {
         setCenter(games);
     }
 
+    public Tournament getTournament() {
+        return tournament;
+    }
+
     public void setTournament(final Tournament tournament) {
         this.tournament = tournament;
         players.setItems(tournament.getPlayers());
+    }
+
+    private void save(final boolean showDialog) {
+        if (showDialog || tournamentFile == null) {
+            final File file = chooser.showSaveDialog(getScene().getWindow());
+            if (file != null)
+                tournamentFile = file;
+            else
+                return;
+        }
+        try {
+            getTournament().write(tournamentFile);
+        } catch (final IOException ex) {
+            new Alert(AlertType.ERROR, ex.getMessage()).show();
+        }
+    }
+
+    private void open() {
+        final File file = chooser.showOpenDialog(getScene().getWindow());
+        if (file != null) {
+            tournamentFile = file;
+            try {
+                setTournament(Tournament.read(tournamentFile));
+            } catch (final IOException|ClassNotFoundException ex) {
+                new Alert(AlertType.ERROR, ex.getMessage()).show();
+            }
+        }
     }
 
 }
