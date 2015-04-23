@@ -17,6 +17,8 @@ import java.util.ArrayList;
  */
 public class Tournament implements Serializable {
 
+    private static final long serialVersionUID = 0;
+
     private final ObservableList<Player> players;
     private final ObservableList<Game> games;
 

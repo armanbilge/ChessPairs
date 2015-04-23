@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
  */
 public class Player implements Serializable {
 
+    private static final long serialVersionUID = 0;
+
     private final String name;
     private final ObservableList<Game> games;
 

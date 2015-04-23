@@ -7,6 +7,8 @@ import java.io.Serializable;
  */
 public class Game implements Serializable {
 
+    private static final long serialVersionUID = 0;
+
     private final Player white;
     private final boolean whiteNoCount;
     private final Player black;
