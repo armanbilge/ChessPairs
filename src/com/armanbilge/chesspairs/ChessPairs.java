@@ -11,11 +11,14 @@ import javafx.stage.Stage;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Random;
 
 /**
  * @author Arman Bilge
  */
 public class ChessPairs extends Application {
+
+    public static final Random RANDOM = new Random();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
