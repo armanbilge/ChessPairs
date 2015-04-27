@@ -1,5 +1,8 @@
 package com.armanbilge.chesspairs;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+
 /**
  * @author Arman Bilge
  */
@@ -7,8 +10,8 @@ public class Pair {
 
     private final Player player1;
     private final Player player2;
-    private Player white;
-    private Player black;
+    private ObjectProperty<Player> white = new SimpleObjectProperty<>();
+    private ObjectProperty<Player> black = new SimpleObjectProperty<>();
 
     private static final int OPPONENT_FACTOR = 8192;
     private static final int SCORE_FACTOR = 512;
@@ -20,10 +23,18 @@ public class Pair {
     }
 
     public Player getWhite() {
-        return white;
+        return whiteProperty().get();
     }
 
     public Player getBlack() {
+        return blackProperty().get();
+    }
+
+    public ObjectProperty<Player> whiteProperty() {
+        return white;
+    }
+
+    public ObjectProperty<Player> blackProperty() {
         return black;
     }
 
@@ -39,6 +50,7 @@ public class Pair {
     public void optimizeColors() {
         final double a = calculateColorBadness(player1, player2);
         final double b = calculateColorBadness(player2, player1);
+        final Player white, black;
         if (a < b) {
             white = player1;
             black = player2;
@@ -52,10 +64,12 @@ public class Pair {
             white = player2;
             black = player1;
         }
+        whiteProperty().set(white);
+        blackProperty().set(black);
     }
 
     public double getColorBadness() {
-        return COLOR_FACTOR * calculateColorBadness(white, black);
+        return COLOR_FACTOR * calculateColorBadness(getWhite(), getBlack());
     }
 
     private static double calculateColorBadness(final Player white, final Player black) {

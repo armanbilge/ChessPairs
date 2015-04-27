@@ -37,7 +37,7 @@ public class Tournament implements Serializable {
     }
 
     public void removePlayer(final Player player) {
-        players.remove(player);
+        getPlayers().remove(player);
     }
 
     public void addGame(final Game game) {
@@ -74,7 +74,6 @@ public class Tournament implements Serializable {
         if (observableGames == null)
             observableGames = new ObservableListWrapper<>(games);
         return observableGames;
-
     }
 
 }

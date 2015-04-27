@@ -2,9 +2,10 @@ package com.armanbilge.chesspairs;
 
 import com.sun.javafx.collections.ObservableListWrapper;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValueBase;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -20,6 +21,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -29,10 +31,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * @author Arman Bilge
@@ -42,12 +46,12 @@ public class TournamentViewer extends BorderPane {
     private static final ExtensionFilter cht = new ExtensionFilter("Chess Tournament", "*.cht");
 
     private final TableView<Player> players = new TableView<>();
-    private final TableView<Game> games = new TableView<>();
+    private final TableView<GameView> games = new TableView<>();
     private final FileChooser chooser = new FileChooser();
 
     private Tournament tournament;
     private File tournamentFile = null;
-    private boolean saved = false;
+    private boolean saved = true;
 
 //    private final UndoManager undoManager;
 //    private final
@@ -165,14 +169,29 @@ public class TournamentViewer extends BorderPane {
             pane.add(outcome, 1, 1);
             final ComboBox<Player> black = new ComboBox<>(getTournament().getPlayers());
             pane.add(black, 2, 1);
-            final ChangeListener<Object> listener = (o, ov, nv) -> addButton.setDisable(white.getValue() == black.getValue() || white.getValue() == null || black.getValue() == null || outcome.getValue() == null);
-            white.getSelectionModel().selectedItemProperty().addListener(listener);
-            black.getSelectionModel().selectedItemProperty().addListener(listener);
-            outcome.getSelectionModel().selectedItemProperty().addListener(listener);
             final CheckBox whiteNoCount = new CheckBox("No Count");
             pane.add(whiteNoCount, 0, 2);
             final CheckBox blackNoCount = new CheckBox("No Count");
             pane.add(blackNoCount, 2, 2);
+            final ChangeListener<Object> listener = (o, ov, nv) -> {
+                addButton.setDisable(white.getValue() == black.getValue() || white.getValue() == null || black.getValue() == null || outcome.getValue() == null);
+                if (Unpaired.INSTANCE.equals(white.getValue()) || Unpaired.INSTANCE.equals(black.getValue())) {
+                    whiteNoCount.setSelected(true);
+                    whiteNoCount.setDisable(true);
+                    blackNoCount.setSelected(true);
+                    blackNoCount.setDisable(true);
+                    outcome.setValue(null);
+                    outcome.setDisable(true);
+                    addButton.setDisable(white.getValue() == black.getValue() || white.getValue() == null || black.getValue() == null);
+                } else {
+                    whiteNoCount.setDisable(false);
+                    blackNoCount.setDisable(false);
+                    outcome.setDisable(false);
+                }
+            };
+            white.getSelectionModel().selectedItemProperty().addListener(listener);
+            black.getSelectionModel().selectedItemProperty().addListener(listener);
+            outcome.getSelectionModel().selectedItemProperty().addListener(listener);
             dialog.setResultConverter(cb -> {
                 if (!cb.getButtonData().isCancelButton())
                     return new Game(white.getValue(), whiteNoCount.isSelected(),
@@ -182,7 +201,19 @@ public class TournamentViewer extends BorderPane {
             });
             dialog.showAndWait().ifPresent(getTournament()::addGame);
         });
-        tournamentMenu.getItems().addAll(addGame);
+        final MenuItem generatePairing = new MenuItem("Generate Pairing");
+        generatePairing.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.META_DOWN));
+        generatePairing.setOnAction(a -> {
+            if (tournament.getPlayers().size() % 2 == 1)
+                tournament.addPlayer(Unpaired.INSTANCE);
+            final PairingViewer viewer = new PairingViewer();
+            viewer.setTournament(tournament);
+            final Stage stage = new Stage();
+            stage.setTitle("Pairing Generator");
+            stage.setScene(new Scene(viewer));
+            stage.show();
+        });
+        tournamentMenu.getItems().addAll(addGame, generatePairing);
 
         final Button addButton = new Button("+");
         addButton.setOnAction(ae -> {
@@ -199,68 +230,37 @@ public class TournamentViewer extends BorderPane {
         removeButton.setOnAction(ae -> tournament.removePlayer(players.getSelectionModel().getSelectedItem()));
 
         final TableColumn<Player,String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(cdf -> new ObservableValueBase<String>() {
-            @Override
-            public String getValue() {
-                return cdf.getValue().getName();
-            }
-        });
-        final TableColumn<Player,String> scoreColumn = new TableColumn<>("Score");
-        scoreColumn.setCellValueFactory(cdf -> new ObservableValueBase<String>() {
-            @Override
-            public String getValue() {
-                return Double.toString(cdf.getValue().getScore());
-            }
-        });
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        final TableColumn<Player,Double> scoreColumn = new TableColumn<>("Score");
+        scoreColumn.setCellValueFactory(new PropertyValueFactory<>("score"));
         players.getColumns().addAll(nameColumn, scoreColumn);
 
         final HBox addRemove = new HBox(addButton, removeButton);
         final VBox left = new VBox(players, addRemove);
         setLeft(left);
 
-        players.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
-            if (nv != null)
-                games.setItems(nv.getGames());
-        });
-
-        final TableColumn<Game,String> opponentColumn = new TableColumn<>("Opponent");
-        opponentColumn.setCellValueFactory(cdf -> new ObservableValueBase<String>() {
-            @Override
-            public String getValue() {
-                return cdf.getValue().getOpponent(players.getFocusModel().getFocusedItem()).toString();
-            }
-        });
-
-        final TableColumn<Game,String> colorColumn = new TableColumn<>("Color");
-        colorColumn.setCellValueFactory(cdf -> new ObservableValueBase<String>() {
-            @Override
-            public String getValue() {
-                return cdf.getValue().getColor(players.getFocusModel().getFocusedItem()).toString().toLowerCase();
-            }
-        });
-
-        final TableColumn<Game,String> outcomeColumn = new TableColumn<>("Outcome");
-        outcomeColumn.setCellValueFactory(cdf -> new ObservableValueBase<String>() {
-            @Override
-            public String getValue() {
-                return cdf.getValue().getOutcome(players.getFocusModel().getFocusedItem());
-            }
-        });
-
-        final TableColumn<Game,CheckBox> countedColumn = new TableColumn<>("Counted");
-        countedColumn.setCellValueFactory(cdf -> new ObservableValueBase<CheckBox>() {
-            @Override
-            public CheckBox getValue() {
-                final CheckBox cb = new CheckBox();
-                cb.setSelected(cdf.getValue().counted(players.getFocusModel().getFocusedItem()));
-                cb.setDisable(true);
-                return cb;
-            }
-        });
-
+        final TableColumn<GameView,Player> opponentColumn = new TableColumn<>("Opponent");
+        opponentColumn.setCellValueFactory(new PropertyValueFactory<>("opponent"));
+        final TableColumn<GameView,String> outcomeColumn = new TableColumn<>("Outcome");
+        outcomeColumn.setCellValueFactory(new PropertyValueFactory<>("outcome"));
+        final TableColumn<GameView,String> colorColumn = new TableColumn<>("Color");
+        colorColumn.setCellValueFactory(new PropertyValueFactory<>("color"));
+        final TableColumn<GameView,CheckBox> countedColumn = new TableColumn<>("Counted");
+        countedColumn.setCellValueFactory(new PropertyValueFactory<>("counted"));
         games.getColumns().addAll(opponentColumn, colorColumn, outcomeColumn, countedColumn);
-
         setCenter(games);
+
+        players.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            if (nv != null) {
+                final ObservableList<GameView> view = new ObservableListWrapper<>(nv.getGames().stream().map(g -> new GameView(g, nv)).collect(Collectors.toList()));
+                nv.getGames().addListener((ListChangeListener<? super Game>) c -> {
+                    view.clear();
+                    view.addAll(nv.getGames().stream().map(g -> new GameView(g, nv)).collect(Collectors.toList()));
+                });
+                games.setItems(view);
+             }
+        });
+
     }
 
     public Tournament getTournament() {
@@ -277,7 +277,7 @@ public class TournamentViewer extends BorderPane {
     public boolean saveOpportunity() {
         if (!saved) {
             final Alert alert = new Alert(AlertType.CONFIRMATION);
-            alert.setHeaderText("Save Tournament");
+            alert.setTitle("Save Tournament");
             alert.setHeaderText("Do you want to save the changes you made to the tournament?");
             alert.setContentText("Your changes will be lost if you don't save them.");
             final ButtonType dont = new ButtonType("Don't Save", ButtonData.NO);
@@ -314,14 +314,16 @@ public class TournamentViewer extends BorderPane {
     }
 
     private void open() {
-        final File file = chooser.showOpenDialog(getScene().getWindow());
-        if (file != null) {
-            tournamentFile = file;
-            try {
-                setTournament(Tournament.read(tournamentFile));
-                saved = true;
-            } catch (final IOException|ClassNotFoundException ex) {
-                ChessPairs.handleException(ex);
+        if (!saveOpportunity()) {
+            final File file = chooser.showOpenDialog(getScene().getWindow());
+            if (file != null) {
+                tournamentFile = file;
+                try {
+                    setTournament(Tournament.read(tournamentFile));
+                    saved = true;
+                } catch (final IOException|ClassNotFoundException ex) {
+                    ChessPairs.handleException(ex);
+                }
             }
         }
     }

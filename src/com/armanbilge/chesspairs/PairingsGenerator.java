@@ -1,11 +1,13 @@
 package com.armanbilge.chesspairs;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -59,6 +61,24 @@ public class PairingsGenerator implements Iterator<Set<Pair>> {
         }
 
         return next;
+    }
+
+    public static List<Set<Pair>> generate(final Set<Player> players) {
+        final List<Set<Pair>> pairings = new ArrayList<>();
+        generate(new ArrayList<>(players), new HashSet<>(), pairings);
+        return pairings;
+    }
+
+    private static void generate(final List<Player> remainder, final Set<Pair> partial, final List<Set<Pair>> pairings) {
+        if (remainder.size() == 0)
+            pairings.add(partial);
+        else {
+            IntStream.range(1, remainder.size()).forEach(i ->
+                    generate(
+                    Stream.concat(remainder.subList(1, i).stream(), remainder.subList(i+1, remainder.size()).stream()).collect(Collectors.toList()),
+                    Stream.concat(partial.stream(), Stream.of(new Pair(remainder.get(0), remainder.get(i)))).collect(Collectors.toSet()),
+                    pairings));
+        }
     }
 
 }

@@ -44,6 +44,17 @@ public class Game implements Serializable {
             return null;
     }
 
+    public Color getNullableColor(final Player player) {
+        if (getWhite().equals(Unpaired.INSTANCE) || getBlack().equals(Unpaired.INSTANCE))
+            return null;
+        else if (getWhite().equals(player))
+            return Color.WHITE;
+        else if (getBlack().equals(player))
+            return Color.BLACK;
+        else
+            return null;
+    }
+
     public double getScore(final Player player) {
         if (counted(player))
             return outcome.getScore(getColor(player));
@@ -52,6 +63,8 @@ public class Game implements Serializable {
     }
 
     public String getOutcome(final Player player) {
+        if (outcome == null)
+            return "NA";
         final String won = "won";
         final String lost = "lost";
         switch (outcome) {
