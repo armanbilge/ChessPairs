@@ -48,6 +48,7 @@ public class TournamentViewer extends BorderPane {
     private final TableView<Player> players = new TableView<>();
     private final TableView<GameView> games = new TableView<>();
     private final FileChooser chooser = new FileChooser();
+    private final UndoManager undoManager = new UndoManager();
 
     private Tournament tournament;
     private File tournamentFile = null;
@@ -71,12 +72,16 @@ public class TournamentViewer extends BorderPane {
             super(player);
         }
         @Override
-        public void apply() {
+        public void redo() {
             tournament.addPlayer(getPlayer());
         }
         @Override
         public void undo() {
             tournament.removePlayer(getPlayer());
+        }
+        @Override
+        public String toString() {
+            return "Add Player";
         }
     }
 
@@ -85,12 +90,15 @@ public class TournamentViewer extends BorderPane {
             super(player);
         }
         @Override
-        public void apply() {
+        public void redo() {
             tournament.removePlayer(getPlayer());
         }
         @Override
         public void undo() {
             tournament.addPlayer(getPlayer());
+        }
+        public String toString() {
+            return "Remove Player";
         }
     }
 
@@ -100,12 +108,15 @@ public class TournamentViewer extends BorderPane {
             this.game = game;
         }
         @Override
-        public void apply() {
+        public void redo() {
             tournament.addGame(game);
         }
         @Override
         public void undo() {
             tournament.removeGame(game);
+        }
+        public String toString() {
+            return "Add Game";
         }
     }
 
@@ -113,8 +124,6 @@ public class TournamentViewer extends BorderPane {
         chooser.getExtensionFilters().add(cht);
         chooser.setSelectedExtensionFilter(cht);
 
-//        );
-//        undoManager = UndoManagerFactory.unlimitedHistoryUndoManager(events, Undoable::apply, Undoable::undo)
 
         setTournament(new Tournament());
 
@@ -126,7 +135,7 @@ public class TournamentViewer extends BorderPane {
         menuBar.getMenus().addAll(fileMenu);
 
         final MenuItem newTournament = new MenuItem("New Tournament");
-        newTournament.setAccelerator(new KeyCodeCombination(KeyCode.N, KeyCombination.META_DOWN));
+        newTournament.setAccelerator(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN));
         newTournament.setOnAction(event -> {
             if (!saveOpportunity()) {
                 setTournament(new Tournament());
@@ -135,20 +144,34 @@ public class TournamentViewer extends BorderPane {
             }
         });
         final MenuItem open = new MenuItem("Open...");
-        open.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.META_DOWN));
+        open.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN));
         open.setOnAction(event -> open());
         final MenuItem save = new MenuItem("Save...");
-        save.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.META_DOWN));
+        save.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
         save.setOnAction(event -> save(false));
         final MenuItem saveAs = new MenuItem("Save As...");
-        saveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.META_DOWN, KeyCombination.SHIFT_DOWN));
+        saveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN));
         saveAs.setOnAction(event -> save(true));
         fileMenu.getItems().addAll(newTournament, open, save, saveAs);
+
+        final Menu editMenu = new Menu("Edit");
+        menuBar.getMenus().addAll(editMenu);
+        final MenuItem undo = new MenuItem();
+        undo.disableProperty().bind(undoManager.undoProperty());
+        undo.textProperty().bind(undoManager.undoTextProperty());
+        undo.setAccelerator(new KeyCodeCombination(KeyCode.Z, KeyCombination.SHORTCUT_DOWN));
+        undo.setOnAction(ae -> undoManager.undo());
+        final MenuItem redo = new MenuItem();
+        redo.disableProperty().bind(undoManager.redoProperty());
+        redo.textProperty().bind(undoManager.redoTextProperty());
+        redo.setAccelerator(new KeyCodeCombination(KeyCode.Z, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN));
+        redo.setOnAction(ae -> undoManager.redo());
+        editMenu.getItems().addAll(undo, redo);
 
         final Menu tournamentMenu = new Menu("Tournament");
         menuBar.getMenus().addAll(tournamentMenu);
         final MenuItem addGame = new MenuItem("Add Game...");
-        addGame.setAccelerator(new KeyCodeCombination(KeyCode.G, KeyCombination.META_DOWN));
+        addGame.setAccelerator(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN));
         addGame.setOnAction(event -> {
             final Dialog<Game> dialog = new Dialog<>();
             dialog.setTitle("Add Game");
@@ -199,10 +222,13 @@ public class TournamentViewer extends BorderPane {
                 else
                     return null;
             });
-            dialog.showAndWait().ifPresent(getTournament()::addGame);
+            dialog.showAndWait().ifPresent(game -> {
+                getTournament().addGame(game);
+                undoManager.push(new UndoableAddGame(game));
+            });
         });
         final MenuItem generatePairing = new MenuItem("Generate Pairing");
-        generatePairing.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.META_DOWN));
+        generatePairing.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN));
         generatePairing.setOnAction(a -> {
             if (tournament.getPlayers().size() % 2 == 1)
                 tournament.addPlayer(Unpaired.INSTANCE);
@@ -221,13 +247,21 @@ public class TournamentViewer extends BorderPane {
             playerDialog.setTitle("New Player");
             playerDialog.setHeaderText(null);
             playerDialog.setContentText("Please enter the player name:");
-            playerDialog.showAndWait().ifPresent(name -> tournament.addPlayer(new Player(name)));
+            playerDialog.showAndWait().ifPresent(name -> {
+                final Player player = new Player(name);
+                getTournament().addPlayer(player);
+                undoManager.push(new UndoableAddPlayer(player));
+            });
         });
 
         final Button removeButton = new Button("-");
         removeButton.setDisable(true);
-        players.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> removeButton.setDisable(nv == null));
-        removeButton.setOnAction(ae -> tournament.removePlayer(players.getSelectionModel().getSelectedItem()));
+        removeButton.disableProperty().bind(players.getSelectionModel().selectedItemProperty().isNull());
+        removeButton.setOnAction(ae -> {
+            final Player player = players.getSelectionModel().getSelectedItem();
+            tournament.removePlayer(player);
+            undoManager.push(new UndoableRemovePlayer(player));
+        });
 
         final TableColumn<Player,String> nameColumn = new TableColumn<>("Name");
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -272,6 +306,7 @@ public class TournamentViewer extends BorderPane {
         tournament.getPlayers().addListener((ListChangeListener<? super Player>) c -> saved = false);
         tournament.getGames().addListener((ListChangeListener<? super Game>) c -> saved = false);
         players.setItems(tournament.getPlayers());
+        undoManager.clear();
     }
 
     public boolean saveOpportunity() {
