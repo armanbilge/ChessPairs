@@ -63,7 +63,7 @@ public class PairingsGenerator implements Iterator<Set<Pair>> {
         return next;
     }
 
-    public static List<Set<Pair>> generate(final Set<Player> players) {
+    public static List<Set<Pair>> generate(final List<Player> players) {
         final List<Set<Pair>> pairings = new ArrayList<>();
         generate(new ArrayList<>(players), new HashSet<>(), pairings);
         return pairings;

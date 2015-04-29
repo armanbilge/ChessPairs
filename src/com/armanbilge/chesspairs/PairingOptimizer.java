@@ -1,6 +1,5 @@
 package com.armanbilge.chesspairs;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -12,7 +11,7 @@ public interface PairingOptimizer {
 
     static PairingOptimizer create(final Tournament tournament) {
         if (tournament.getGames().size() > 0)
-            return new PairingOptimizerImpl(new HashSet<>(tournament.getPlayers()));
+            return new PairingOptimizerImpl(tournament.getPlayers());
         else
             return new RandomPairing(tournament.getPlayers());
     }

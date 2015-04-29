@@ -10,7 +10,7 @@ public class PairingOptimizerImpl implements PairingOptimizer {
 
     final List<Set<Pair>> bestPairings;
 
-    public PairingOptimizerImpl(final Set<Player> players) {
+    public PairingOptimizerImpl(final List<Player> players) {
 //        bestPairings = StreamSupport.stream(((Iterable<Set<Pair>>) () -> new PairingsGenerator(players)).spliterator(), false).collect(Collectors.toList());
         bestPairings = PairingsGenerator.generate(players);
         double[] x = bestPairings.stream().mapToDouble(PairingOptimizerImpl::getPairingBadness).toArray();

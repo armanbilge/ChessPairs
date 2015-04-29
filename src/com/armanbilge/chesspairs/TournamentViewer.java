@@ -231,7 +231,10 @@ public class TournamentViewer extends BorderPane {
         generatePairing.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN));
         generatePairing.setOnAction(a -> {
             if (tournament.getPlayers().size() % 2 == 1)
-                tournament.addPlayer(Unpaired.INSTANCE);
+                if (!tournament.getPlayers().contains(Unpaired.INSTANCE))
+                    tournament.addPlayer(Unpaired.INSTANCE);
+                else
+                    tournament.removePlayer(Unpaired.INSTANCE);
             final PairingViewer viewer = new PairingViewer();
             viewer.setTournament(tournament);
             final Stage stage = new Stage();
