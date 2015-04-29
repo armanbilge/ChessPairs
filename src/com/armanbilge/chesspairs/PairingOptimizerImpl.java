@@ -1,7 +1,10 @@
 package com.armanbilge.chesspairs;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.ToDoubleFunction;
+import java.util.stream.Collector;
 
 /**
  * @author Arman Bilge
@@ -12,13 +15,9 @@ public class PairingOptimizerImpl implements PairingOptimizer {
 
     public PairingOptimizerImpl(final List<Player> players) {
 //        bestPairings = StreamSupport.stream(((Iterable<Set<Pair>>) () -> new PairingsGenerator(players)).spliterator(), false).collect(Collectors.toList());
-        bestPairings = PairingsGenerator.generate(players);
-        double[] x = bestPairings.stream().mapToDouble(PairingOptimizerImpl::getPairingBadness).toArray();
-        final double min1 = bestPairings.stream().mapToDouble(PairingOptimizerImpl::getPairingBadness).min().getAsDouble();
-        bestPairings.removeIf(p -> getPairingBadness(p) > min1);
-        bestPairings.forEach(PairingOptimizerImpl::optimizeColors);
-        final double min2 = bestPairings.stream().mapToDouble(PairingOptimizerImpl::getColorBadness).min().getAsDouble();
-        bestPairings.removeIf(p -> getColorBadness(p) > min2);
+        bestPairings = PairingsGenerator.generate(players).stream()
+                .collect(min(PairingOptimizerImpl::getPairingBadness)).stream()
+                .collect(min(PairingOptimizerImpl::getColorBadness));
     }
 
     @Override
@@ -38,6 +37,23 @@ public class PairingOptimizerImpl implements PairingOptimizer {
 
     private static void optimizeColors(final Set<Pair> pairing) {
         pairing.forEach(Pair::optimizeColors);
+    }
+
+    private static Collector<Set<Pair>,List<Set<Pair>>,List<Set<Pair>>> min(ToDoubleFunction<Set<Pair>> f) {
+        return Collector.of(ArrayList::new, List::add, (a,b) -> {
+            final double x = f.applyAsDouble(a.get(0));
+            final double y = f.applyAsDouble(b.get(0));
+            if (x < y) {
+                return a;
+            }
+            else if (y > x) {
+                return b;
+            }
+            else {
+                a.addAll(b);
+                return a;
+            }
+        });
     }
 
 }
