@@ -54,9 +54,6 @@ public class TournamentViewer extends BorderPane {
     private File tournamentFile = null;
     private boolean saved = true;
 
-//    private final UndoManager undoManager;
-//    private final
-
     private abstract class UndoablePlayer implements Undoable {
         private final Player player;
         public UndoablePlayer(final Player player) {
