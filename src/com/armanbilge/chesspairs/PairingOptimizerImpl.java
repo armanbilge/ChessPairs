@@ -16,8 +16,8 @@ public class PairingOptimizerImpl implements PairingOptimizer {
     public PairingOptimizerImpl(final List<Player> players) {
 //        bestPairings = StreamSupport.stream(((Iterable<Set<Pair>>) () -> new PairingsGenerator(players)).spliterator(), false).collect(Collectors.toList());
         bestPairings = PairingsGenerator.generate(players).stream()
-                .collect(min(PairingOptimizerImpl::getPairingBadness)).stream()
-                .collect(min(PairingOptimizerImpl::getColorBadness));
+                .collect(min(PairingOptimizerImpl::getPairingBadness));//.stream()
+//                .collect(min(PairingOptimizerImpl::getColorBadness));
     }
 
     @Override
@@ -40,20 +40,29 @@ public class PairingOptimizerImpl implements PairingOptimizer {
     }
 
     private static Collector<Set<Pair>,List<Set<Pair>>,List<Set<Pair>>> min(ToDoubleFunction<Set<Pair>> f) {
-        return Collector.of(ArrayList::new, List::add, (a,b) -> {
-            final double x = f.applyAsDouble(a.get(0));
-            final double y = f.applyAsDouble(b.get(0));
-            if (x < y) {
-                return a;
-            }
-            else if (y > x) {
-                return b;
-            }
-            else {
-                a.addAll(b);
-                return a;
-            }
-        });
+        return Collector.of(ArrayList::new,
+                (a,b) -> {
+                    final double x = a.size() > 0 ? f.applyAsDouble(a.get(0)) : Double.POSITIVE_INFINITY;
+                    final double y = f.applyAsDouble(b);
+                    if (x == y) {
+                        a.add(b);
+                    } else if (y < x) {
+                        a.clear();
+                        a.add(b);
+                    }
+                },
+                (a,b) -> {
+                    final double x = f.applyAsDouble(a.get(0));
+                    final double y = f.applyAsDouble(b.get(0));
+                    if (x < y) {
+                        return a;
+                    } else if (y < x) {
+                        return b;
+                    } else {
+                        a.addAll(b);
+                        return a;
+                    }
+            });
     }
 
 }
