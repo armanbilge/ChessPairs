@@ -54,8 +54,8 @@ public class PairingOptimizerImpl implements PairingOptimizer {
                     }
                 },
                 (a,b) -> {
-                    final double x = f.applyAsDouble(a.get(0));
-                    final double y = f.applyAsDouble(b.get(0));
+                    final double x = a.size() > 0 ? f.applyAsDouble(a.get(0)) : Double.POSITIVE_INFINITY;
+                    final double y = b.size() > 0 ? f.applyAsDouble(b.get(0)) : Double.POSITIVE_INFINITY;
                     if (x < y) {
                         return a;
                     } else if (y < x) {
