@@ -22,8 +22,8 @@ public class PairingsGenerator implements Iterator<Set<Pair>> {
     private int i = 1;
     private PairingsGenerator generator = null;
 
-    public PairingsGenerator(final Set<Player> players) {
-        remainder = players.stream().collect(Collectors.toList());
+    public PairingsGenerator(final List<Player> players) {
+        remainder = new ArrayList<>(players);
         partial = new HashSet<>();
     }
 
@@ -34,7 +34,7 @@ public class PairingsGenerator implements Iterator<Set<Pair>> {
 
     @Override
     public boolean hasNext() {
-        return hasNext || i < remainder.size();
+        return hasNext;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class PairingsGenerator implements Iterator<Set<Pair>> {
         }
 
         if (generator == null) {
-            generator = new PairingsGenerator(remainder.stream().filter(p -> !remainder.get(i).equals(p)).collect(Collectors.toList()),
+            generator = new PairingsGenerator(Stream.concat(remainder.subList(1, i).stream(), remainder.subList(i+1, remainder.size()).stream()).collect(Collectors.toList()),
                     Stream.concat(partial.stream(), Stream.of(new Pair(remainder.get(0), remainder.get(i)))).collect(Collectors.toSet()));
         }
 
@@ -57,6 +57,7 @@ public class PairingsGenerator implements Iterator<Set<Pair>> {
 
         if (!generator.hasNext()) {
             ++i;
+            hasNext = i < remainder.size();
             generator = null;
         }
 

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collector;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Arman Bilge
@@ -14,10 +15,11 @@ public class PairingOptimizerImpl implements PairingOptimizer {
     final List<Set<Pair>> bestPairings;
 
     public PairingOptimizerImpl(final List<Player> players) {
-//        bestPairings = StreamSupport.stream(((Iterable<Set<Pair>>) () -> new PairingsGenerator(players)).spliterator(), false).collect(Collectors.toList());
-        bestPairings = PairingsGenerator.generate(players).stream()
-                .collect(min(PairingOptimizerImpl::getPairingBadness));//.stream()
-//                .collect(min(PairingOptimizerImpl::getColorBadness));
+        bestPairings = StreamSupport.stream(
+                ((Iterable<Set<Pair>>) () -> new PairingsGenerator(players)).spliterator(), false)
+                .collect(min(PairingOptimizerImpl::getPairingBadness)).stream()
+                .map(pairing -> {optimizeColors(pairing); return pairing;})
+                .collect(min(PairingOptimizerImpl::getColorBadness));
     }
 
     @Override
