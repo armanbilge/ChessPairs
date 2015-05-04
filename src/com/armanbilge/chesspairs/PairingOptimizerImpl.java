@@ -1,5 +1,11 @@
 package com.armanbilge.chesspairs;
 
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -15,8 +21,18 @@ public class PairingOptimizerImpl implements PairingOptimizer {
     final List<Set<Pair>> bestPairings;
 
     public PairingOptimizerImpl(final List<Player> players) {
+        final PairingsGenerator generator = new PairingsGenerator(players);
+        final ProgressBar progress = new ProgressBar();
+        progress.progressProperty().bind(generator.progressProperty());
+        final Stage stage = new Stage();
+        stage.setTitle("Generating Pairings...");
+        stage.setScene(new Scene(new HBox(new Label("Hello"))));
+        stage.show();
+        progress.progressProperty().addListener((o, ov, nv) -> {
+            if (nv.equals(1.0)) stage.hide();
+        });
         bestPairings = StreamSupport.stream(
-                ((Iterable<Set<Pair>>) () -> new PairingsGenerator(players)).spliterator(), false)
+                ((Iterable<Set<Pair>>) () -> generator).spliterator(), false)
                 .collect(min(PairingOptimizerImpl::getPairingBadness)).stream()
                 .map(pairing -> {optimizeColors(pairing); return pairing;})
                 .collect(min(PairingOptimizerImpl::getColorBadness));
